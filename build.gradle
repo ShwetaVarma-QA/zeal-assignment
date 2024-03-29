@@ -1,0 +1,56 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'io.cucumber:cucumber-java:6.10.4'
+    testImplementation 'io.rest-assured:rest-assured:5.3.2'
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+
+}
+
+configurations {
+    cucumberRuntime {
+        extendsFrom testImplementation
+    }
+}
+
+task allScenarios() {
+    dependsOn assemble, testClasses
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            args = ['--plugin', 'pretty',
+                    '--plugin', 'html:Report/cucumber-report',
+                    '--plugin', 'json:Report/cucumber.json', //generates a .json report file
+                    '--plugin', 'usage:Report/cucumber-usage.json',
+                    '--glue', 'stepDefinition', 'src/test/resources/featureFiles']
+        }
+    }
+}
+
+task cucumber() {
+    dependsOn assemble, compileTestJava
+    doLast {
+        javaexec {
+            main = "io.cucumber.core.cli.Main"
+            classpath = configurations.cucumberRuntime + sourceSets.main.output + sourceSets.test.output
+            def tags = getProperty("tags")
+            args = [
+                    '--plugin', 'html:Report/cucumber-report',
+                    '--plugin', 'json:Report/cucumber.json', //generates a .json report file
+                    '--plugin', 'pretty',
+                    '--plugin', 'usage:Report/cucumber-usage.json',
+                    '--glue', 'stepDefinition', 'src/test/resources/featureFiles',
+                    '--tags', tags]
+        }
+    }
+}
